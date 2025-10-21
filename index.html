@@ -174,7 +174,9 @@
     </div>
 
     <script>
-        const webhookUrl = 'https://n8n.mangomuse.shop/webhook-test/amazon-form';
+// Define both webhook URLs
+        const testWebhookUrl = 'https://n8n.mangomuse.shop/webhook-test/9e26c4e1-ab7a-4619-86ed-9836b40c561a';
+        const prodWebhookUrl = 'https://n8n.mangomuse.shop/webhook/9e26c4e1-ab7a-4619-86ed-9836b40c561a';
 
         document.getElementById('amazonForm').addEventListener('submit', async function (event) {
             event.preventDefault();
@@ -187,7 +189,8 @@
             });
 
             try {
-                const response = await fetch(webhookUrl, {
+                // Try sending to test webhook first
+                let response = await fetch(testWebhookUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -195,13 +198,26 @@
                     body: JSON.stringify(formObj),
                 });
 
+                // If test webhook fails, try production webhook
+                if (!response.ok) {
+                    response = await fetch(prodWebhookUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formObj),
+                    });
+                }
+
                 const result = await response.json();
                 document.getElementById('responseMessage').textContent = 'Form submitted successfully!';
                 alert('Form submitted successfully: ' + JSON.stringify(result));
             } catch (error) {
                 alert('Error: ' + error.message);
+                console.error('Submission error:', error);
             }
         });
     </script>
 </body>
 </html>
+
