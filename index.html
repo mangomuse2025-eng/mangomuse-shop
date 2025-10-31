@@ -175,52 +175,69 @@
 
     <script>
 // Define both webhook URLs
-        const testWebhookUrl = 'https://n8n.mangomuse.shop/webhook-test/066906c6-af7f-42ee-9114-b2337db202d3';
-        const prodWebhookUrl = 'https://n8n.mangomuse.shop/webhook/066906c6-af7f-42ee-9114-b2337db202d3';
-       // const webhookUrl = 'https://n8n.mangomuse.shop/webhook/9e26c4e1-ab7a-4619-86ed-9836b40c561a';
+const testWebhookUrl = 'https://n8n.mangomuse.shop/webhook-test/066906c6-af7f-42ee-9114-b2337db202d3';
+const prodWebhookUrl = 'https://n8n.mangomuse.shop/webhook/066906c6-af7f-42ee-9114-b2337db202d3';
 
-        document.getElementById('amazonForm').addEventListener('submit', async function (event) {
-            event.preventDefault();
+document.getElementById('amazonForm').addEventListener('submit', async function (event) {
+    event.preventDefault();
+    
+    // Disable submit button to prevent double submission
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    
+    const formData = new FormData(event.target);
+    const formObj = {};
+    
+    formData.forEach((value, key) => {
+        formObj[key] = value;
+    });
 
-            const formData = new FormData(event.target);
-            const formObj = {};
+    // Wrap the data in a "body" object to match n8n expectations
+    const payload = {
+        body: formObj
+    };
 
-            formData.forEach((value, key) => {
-                formObj[key] = value;
-            });
-
-            try {
-                // Try sending to test webhook first
-                let response = await fetch(testWebhookUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formObj),
-                });
-
-                // If test webhook fails, try production webhook
-                if (!response.ok) {
-                    response = await fetch(prodWebhookUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(formObj),
-                    });
-                }
-
-                const result = await response.json();
-                document.getElementById('responseMessage').textContent = 'Form submitted successfully!';
-                alert('Form submitted successfully: ' + JSON.stringify(result));
-            } catch (error) {
-                alert('Error: ' + error.message);
-                console.error('Submission error:', error);
-            }
+    try {
+        // Try test webhook first
+        let response = await fetch(testWebhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
         });
+
+        // If test webhook fails, try production webhook
+        if (!response.ok) {
+            response = await fetch(prodWebhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        document.getElementById('responseMessage').textContent = 'Form submitted successfully!';
+        document.getElementById('responseMessage').style.color = '#27ae60';
+        event.target.reset(); // Reset form after successful submission
+    } catch (error) {
+        document.getElementById('responseMessage').textContent = 'Error submitting form: ' + error.message;
+        document.getElementById('responseMessage').style.color = '#e74c3c';
+        console.error('Submission error:', error);
+    } finally {
+        submitButton.disabled = false; // Re-enable submit button
+    }
+});
     </script>
 </body>
 </html>
+
 
 
 
